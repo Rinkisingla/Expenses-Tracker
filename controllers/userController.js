@@ -18,11 +18,14 @@ const generateaccessandrefreshtoken = async(userId)=>{
      }
 }
 const userRegister= AsyncHandler(async(req, res)=>{
-      const field= userSchema.safeParse(req.body);
-      if(!field.success){
-        throw new ApiError(401, "All input field are required")
-      }
-       const {username, fullname, email, password}= field.data;
+  const result = userSchema.safeParse(req.body);
+
+if (!result.success) {
+    const messages = result.error.issues.map(err => err.message);
+    throw new ApiError(400, messages.join(", ") || "Invalid input");
+  }
+
+const { username, fullname, email, password } = result.data;
        const finduser = await User.findOne({username});
         if(finduser){
             throw new ApiError(403, "This user is already exist");
@@ -50,17 +53,29 @@ const userRegister= AsyncHandler(async(req, res)=>{
         throw new ApiError(403 , "Invalid creditional");
      }
      const options={
-        https:true,
+        httponly:true,
         secure:true,
      }
      const{accessToken, refreshToken}=  await generateaccessandrefreshtoken(user._id);
-     console.log(accessToken, refreshToken);
     res.status(200).cookie("accesstoken", accessToken,options)
      .cookie("refreshtoken",refreshToken, options)
       .json( new ApiResponse(200,
           {user: user, accessToken, refreshToken},"loggedin user successfully"
       ))
-
-
+  
  })
- export {userRegister, login}
+  const Userprofile =AsyncHandler(async(req, res)=>{
+        const {userid}= req.params;
+         if(!userid?.trim())
+          throw new ApiError(402, "Invalid Input");
+          const user = await User.findById(userid);
+          if(!user){
+             throw new ApiError(404, "User Not found");
+          }
+         res.status(200).json(
+            new ApiResponse( 200, user, "User data fetched successfully")
+         )
+         
+
+       })
+ export {userRegister, login, Userprofile}
