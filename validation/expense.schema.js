@@ -1,6 +1,6 @@
 import { z } from "zod";
 import mongoose from "mongoose";
-
+ 
 export const expenseSchema = z.object({
   userId: z.string()
     .refine(id => mongoose.isValidObjectId(id), {
@@ -30,3 +30,8 @@ export const expenseSchema = z.object({
     return val;
   }, z.date({ invalid_type_error: "Invalid date" }).optional())
 });
+
+export const editExpenseSchema = expenseSchema.partial().refine(
+  data => Object.keys(data).length > 0,
+  { message: "At least one field must be provided for update" }
+);
